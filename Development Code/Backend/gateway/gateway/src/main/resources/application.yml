@@ -1,0 +1,94 @@
+server:
+  address: 0.0.0.0   # ✅ Listen on all interfaces
+  port: 8088
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      # ✅ Global CORS configuration (frontend + local dev)
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://bwc-90.brainwaveconsulting.co.in:3000"
+              - "http://bwc-90.brainwaveconsulting.co.in:3001"
+              - "http://bwc-90.brainwaveconsulting.co.in:3002"
+              - "http://bwc-90.brainwaveconsulting.co.in:3003"
+              - "http://bwc-72.brainwaveconsulting.co.in:3000"
+              - "http://bwc-72.brainwaveconsulting.co.in:3001"
+              - "http://bwc-72.brainwaveconsulting.co.in:3003"
+              - "http://localhost:3000"
+              - "http://localhost:3001"
+              - "http://localhost:3002"
+              - "http://localhost:3003"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            exposedHeaders:
+              - Authorization
+              - Content-Type
+            allowCredentials: true
+
+      # ✅ ROUTES CONFIGURATION
+      routes:
+        # 🧩 Employee Service
+        - id: employee-service
+          uri: http://localhost:8080
+          predicates:
+            - Path=/ems/**
+          filters:
+            - AddRequestHeader=X-Internal-Gateway-Secret, bwc-secure-gateway
+
+        # 🧩 Travel Request Management Service
+        - id: travel-request-management
+          uri: http://localhost:8090
+          predicates:
+            - Path=/travel-management/**
+          filters:
+            - AddRequestHeader=X-Internal-Gateway-Secret, bwc-secure-gateway
+
+        # 🧩 Approval Workflow Service
+        - id: approval-workflow-service
+          uri: http://localhost:8086
+          predicates:
+            - Path=/api/workflows/**,
+                   /api/workflow-configs/**,
+                   /api/manager/**,
+                   /api/finance/**,
+                   /api/hr/**,
+                   /api/travel-desk/**,
+                   /api/admin/**
+          filters:
+            - AddRequestHeader=X-Internal-Gateway-Secret, bwc-secure-gateway
+
+      # 🧱 Remove unsafe headers before forwarding
+      default-filters:
+        - RemoveRequestHeader=Connection
+        - RemoveRequestHeader=Keep-Alive
+        - RemoveRequestHeader=Transfer-Encoding
+        - RemoveRequestHeader=TE
+        - RemoveRequestHeader=Trailer
+        - RemoveRequestHeader=Upgrade
+        - RemoveRequestHeader=Proxy-Authorization
+
+# 🔐 JWT Config (used for token verification & role forwarding)
+jwt:
+  secret: MySuperSecureAesEncryptionKey123456   # ✅ SAME as Auth & Workflow services
+  expiration-seconds: 3600
+
+# 🔑 Internal Gateway Shared Secret
+gateway:
+  internal:
+    secret: bwc-secure-gateway                   # ✅ SAME across Gateway + Workflow
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    com.bwc.gateway: DEBUG

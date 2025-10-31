@@ -1,0 +1,9 @@
+====================================
+        🚀  WORKFLOW SERVICE  🚀
+====================================
+   Service Name : Approval Workflow
+   Port         : ${server.port}
+   Profile      : ${spring.profiles.active}
+   DB URL       : ${spring.datasource.url}
+   Started At   : ${spring.application.name}
+====================================
